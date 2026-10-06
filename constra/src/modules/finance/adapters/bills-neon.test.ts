@@ -10,13 +10,15 @@ import {
 const post = { post: postJournalEntry };
 
 afterAll(async () => {
-  // FK-safe order: lines/receipts → bills/invoices → transactions.
-  await sql`DELETE FROM transaction_lines l USING transactions t WHERE l.transaction_id = t.id AND t.memo LIKE '__test%'`;
+  // Scoped by ref prefix (bill:/invoice:) — memo scoping collides with other suites.
+  await sql`
+    DELETE FROM transaction_lines l USING transactions t
+    WHERE l.transaction_id = t.id AND (t.ref LIKE 'bill:%' OR t.ref LIKE 'invoice:%')`;
   await sql`DELETE FROM bill_lines WHERE bill_id IN (SELECT id FROM bills WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM bills WHERE invoice_no LIKE '__test%'`;
   await sql`DELETE FROM client_receipts WHERE invoice_id IN (SELECT id FROM client_invoices WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM client_invoices WHERE invoice_no LIKE '__test%'`;
-  await sql`DELETE FROM transactions WHERE memo LIKE '__test%'`;
+  await sql`DELETE FROM transactions WHERE ref LIKE 'bill:%' OR ref LIKE 'invoice:%'`;
 });
 
 describe("bills end-to-end (neon)", () => {
