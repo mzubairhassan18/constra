@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getSessionUser } from "@/lib/session";
 import { can } from "@/modules/auth/domain/types";
 import { putPhoto, r2Enabled, reportPhotoKey } from "@/lib/r2";
+import { fanout } from "@/modules/notify/adapters/notify-neon";
 import {
   neonOpsAccounts,
   neonOpsStore,
@@ -163,6 +164,13 @@ export async function createReportAction(
     delays: parsed.data.delays || undefined,
     nextDayPlan: parsed.data.nextDayPlan || undefined,
     photoKeys,
+  });
+  await fanout({
+    kind: "report_filed",
+    projectId: parsed.data.projectId,
+    stageId: "",
+    reportKind: parsed.data.delays ? "delay" : "progress",
+    filedBy: "",
   });
   revalidatePath("/operations");
   return {};

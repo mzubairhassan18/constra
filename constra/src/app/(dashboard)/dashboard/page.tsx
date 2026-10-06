@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { logoutAction } from "@/app/(auth)/login/actions";
+import { unreadCount } from "@/modules/notify/adapters/notify-neon";
 import sql from "@/lib/db";
 
 export const instant = false;
@@ -9,10 +11,11 @@ export default async function DashboardPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const [projects, employees, stages] = await Promise.all([
+  const [projects, employees, stages, unread] = await Promise.all([
     sql`SELECT count(*)::int AS n FROM projects`,
     sql`SELECT count(*)::int AS n FROM employees`,
     sql`SELECT count(*)::int AS n FROM stages WHERE status = 'in_progress'`,
+    unreadCount(user.id),
   ]);
 
   const cards = [
@@ -21,7 +24,7 @@ export default async function DashboardPage() {
     { label: "Stages in progress", value: stages[0].n },
   ];
 
-  const links = ["projects", "hr", "bills", "finance", "masters", "operations"];
+  const links = ["projects", "hr", "bills", "finance", "masters", "operations", "chat", "ask"];
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
@@ -47,6 +50,9 @@ export default async function DashboardPage() {
             {l}
           </a>
         ))}
+        <Link href="/notifications" className="rounded border border-zinc-300 px-3 py-1.5 text-sm">
+          Notifications{unread > 0 ? ` (${unread})` : ""}
+        </Link>
       </nav>
       <section className="grid grid-cols-3 gap-4">
         {cards.map((c) => (

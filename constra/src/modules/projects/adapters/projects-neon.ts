@@ -143,3 +143,11 @@ export async function setTask(
       delay_reason = ${status === "blocked" ? delayReason || null : null}
     WHERE id = ${taskId}`;
 }
+
+export async function stageInfo(
+  stageId: string,
+): Promise<{ name: string; projectId: string } | null> {
+  const rows = await sql`SELECT name, project_id FROM stages WHERE id = ${stageId}`;
+  if (rows.length === 0) return null;
+  return { name: rows[0].name as string, projectId: rows[0].project_id as string };
+}

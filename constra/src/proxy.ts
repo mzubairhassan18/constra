@@ -17,6 +17,7 @@ async function authenticated(request: NextRequest): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/portal")) return NextResponse.next();
   const authed = await authenticated(request);
 
   if (!authed && pathname !== "/login") {

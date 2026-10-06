@@ -8,6 +8,8 @@ import {
   addTaskAction,
   setTaskAction,
 } from "../actions";
+import { createPortalTokenAction } from "../portal-actions";
+import { listPortalTokens } from "@/modules/portal/adapters/portal-neon";
 
 export const instant = false;
 
@@ -26,6 +28,7 @@ export default async function ProjectDetailPage({
   const detail = await getProjectDetail(id);
   if (!detail) notFound();
   const { project } = detail;
+  const tokens = await listPortalTokens(project.id);
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
@@ -92,6 +95,29 @@ export default async function ProjectDetailPage({
         <input name="name" required maxLength={200} placeholder="New stage name" className={input} />
         <button className={btn}>Add stage</button>
       </form>
+
+      <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <h2 className="font-semibold">Client portal links</h2>
+        <form action={createPortalTokenAction} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <input type="hidden" name="projectId" value={project.id} />
+          <label><input type="checkbox" name="showCosts" /> costs</label>
+          <label><input type="checkbox" name="showPhotos" defaultChecked /> photos</label>
+          <label><input type="checkbox" name="showDelays" defaultChecked /> delays</label>
+          <button className={btn}>Create link</button>
+        </form>
+        <ul className="mt-2 text-sm">
+          {tokens.map((t) => (
+            <li key={t.token}>
+              <a href={`/portal/${t.token}`} target="_blank" className="underline">
+                /portal/{t.token.slice(0, 12)}…
+              </a>
+              <span className="text-zinc-500">
+                {t.showCosts ? " costs" : ""}{t.showPhotos ? " photos" : ""}{t.showDelays ? " delays" : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }

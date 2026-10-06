@@ -16,7 +16,9 @@ import {
   completeStage,
   addTask,
   setTask,
+  stageInfo,
 } from "@/modules/projects/adapters/projects-neon";
+import { fanout } from "@/modules/notify/adapters/notify-neon";
 
 async function requireWrite(): Promise<boolean> {
   const user = await getSessionUser();
@@ -63,6 +65,15 @@ export async function completeStageAction(formData: FormData) {
   const projectId = String(formData.get("projectId") ?? "");
   if (!stageId) return;
   await completeStage(stageId);
+  const info = await stageInfo(stageId);
+  if (info) {
+    await fanout({
+      kind: "stage_completed",
+      projectId: info.projectId,
+      stageId,
+      stageName: info.name,
+    });
+  }
   revalidatePath(`/projects/${projectId}`);
 }
 

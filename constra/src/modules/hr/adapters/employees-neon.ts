@@ -51,8 +51,13 @@ export async function createEmployee(input: {
   return rows[0].id as string;
 }
 
-export async function getEmployee(id: string): Promise<(EmployeeRow & {
-  assignments: {
+export async function employeeUserId(employeeId: string): Promise<string | null> {
+  const rows = await sql`SELECT user_id FROM employees WHERE id = ${employeeId}`;
+  if (rows.length === 0) return null;
+  return (rows[0].user_id as string | null) ?? null;
+}
+
+export async function getEmployee(id: string): Promise<(EmployeeRow & {  assignments: {
     id: string;
     projectId: string;
     projectName: string;

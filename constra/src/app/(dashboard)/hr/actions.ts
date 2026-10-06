@@ -15,6 +15,8 @@ import {
   neonAssignments,
 } from "@/modules/hr/adapters/assignments-neon";
 import { assignLabour } from "@/modules/hr/use-cases/assign-labour";
+import { employeeUserId } from "@/modules/hr/adapters/employees-neon";
+import { fanout } from "@/modules/notify/adapters/notify-neon";
 
 async function requireHr(): Promise<boolean> {
   const user = await getSessionUser();
@@ -63,13 +65,23 @@ export async function assignAction(formData: FormData) {
     fromDate: formData.get("fromDate"),
   });
   if (!parsed.success) return;
-  await assignLabour(neonAssignments, {
+  const res = await assignLabour(neonAssignments, {
     employeeId: parsed.data.employeeId,
     projectId: parsed.data.projectId,
     stageId: parsed.data.stageId || null,
     fromDate: parsed.data.fromDate,
     allocationPct: 100,
   });
+  if (res.ok) {
+    const userId = await employeeUserId(parsed.data.employeeId);
+    await fanout({
+      kind: "assignment_moved",
+      employeeId: parsed.data.employeeId,
+      employeeUserId: userId ?? undefined,
+      fromProjectId: "",
+      toProjectId: parsed.data.projectId,
+    });
+  }
   revalidatePath("/hr", "layout");
 }
 
