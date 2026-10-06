@@ -21,6 +21,8 @@ export default async function DashboardPage() {
     { label: "Stages in progress", value: stages[0].n },
   ];
 
+  const links = ["projects", "hr", "bills", "finance", "masters"];
+
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">
@@ -39,6 +41,13 @@ export default async function DashboardPage() {
           </button>
         </form>
       </header>
+      <nav className="flex flex-wrap gap-2">
+        {links.map((l) => (
+          <a key={l} href={`/${l}`} className="rounded border border-zinc-300 px-3 py-1.5 text-sm capitalize">
+            {l}
+          </a>
+        ))}
+      </nav>
       <section className="grid grid-cols-3 gap-4">
         {cards.map((c) => (
           <div
