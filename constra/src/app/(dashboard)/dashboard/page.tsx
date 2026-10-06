@@ -21,7 +21,7 @@ export default async function DashboardPage() {
     { label: "Stages in progress", value: stages[0].n },
   ];
 
-  const links = ["projects", "hr", "bills", "finance", "masters"];
+  const links = ["projects", "hr", "bills", "finance", "masters", "operations"];
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
