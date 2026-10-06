@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/session";
 import { can } from "@/modules/auth/domain/types";
+import { putPhoto, r2Enabled, reportPhotoKey } from "@/lib/r2";
 import {
   neonOpsAccounts,
   neonOpsStore,
@@ -143,11 +144,25 @@ export async function createReportAction(
     nextDayPlan: formData.get("nextDayPlan") ?? "",
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+  const photoKeys: string[] = [];
+  if (r2Enabled()) {
+    const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+    if (files.length > 5) return { error: "Max 5 photos." };
+    const today = new Date().toISOString().slice(0, 10);
+    for (const f of files) {
+      if (!f.type.startsWith("image/")) return { error: "Photos must be images." };
+      if (f.size > 5 * 1024 * 1024) return { error: "Each photo must be ≤ 5MB." };
+      const key = reportPhotoKey(parsed.data.projectId, today, f.name);
+      await putPhoto(key, new Uint8Array(await f.arrayBuffer()), f.type);
+      photoKeys.push(key);
+    }
+  }
   await neonOpsStore.saveDailyReport({
     projectId: parsed.data.projectId,
     workDone: parsed.data.workDone,
     delays: parsed.data.delays || undefined,
     nextDayPlan: parsed.data.nextDayPlan || undefined,
+    photoKeys,
   });
   revalidatePath("/operations");
   return {};

@@ -106,6 +106,15 @@ export default async function OperationsPage() {
               <p><b>{r.date}</b> · {r.projectName}</p>
               <p>{r.workDone}</p>
               {r.delays && <p className="text-red-600">Delays: {r.delays}</p>}
+              {r.photoKeys.length > 0 && (
+                <p className="flex flex-wrap gap-2">
+                  {r.photoKeys.map((k) => (
+                    <a key={k} href={`/api/photos?key=${encodeURIComponent(k)}`} target="_blank" className="text-sm underline">
+                      Photo
+                    </a>
+                  ))}
+                </p>
+              )}
             </li>
           ))}
         </ul>

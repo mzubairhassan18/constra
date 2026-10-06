@@ -33,6 +33,7 @@ export interface OpsStore {
     delays?: string;
     nextDayPlan?: string;
     reportedBy?: string;
+    photoKeys?: string[];
   }): Promise<string>;
 }
 

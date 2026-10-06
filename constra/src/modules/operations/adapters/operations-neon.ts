@@ -43,12 +43,14 @@ export const neonOpsStore: OpsStore = {
   },
   async saveDailyReport(r) {
     const rows = await sql`
-      INSERT INTO daily_reports (project_id, stage_id, date, work_done, delays, next_day_plan, reported_by)
+      INSERT INTO daily_reports (project_id, stage_id, date, work_done, delays, next_day_plan, reported_by, photo_keys)
       VALUES (${r.projectId}, ${r.stageId ?? null}, COALESCE(${r.date ?? null}::date, CURRENT_DATE),
-              ${r.workDone}, ${r.delays ?? null}, ${r.nextDayPlan ?? null}, ${r.reportedBy ?? null})
+              ${r.workDone}, ${r.delays ?? null}, ${r.nextDayPlan ?? null}, ${r.reportedBy ?? null},
+              ${r.photoKeys ?? []})
       ON CONFLICT (project_id, stage_id, date)
       DO UPDATE SET work_done = EXCLUDED.work_done, delays = EXCLUDED.delays,
-                    next_day_plan = EXCLUDED.next_day_plan
+                    next_day_plan = EXCLUDED.next_day_plan,
+                    photo_keys = EXCLUDED.photo_keys
       RETURNING id`;
     return rows[0].id as string;
   },
@@ -126,10 +128,10 @@ export async function listMaterialRequests(): Promise<
 }
 
 export async function listDailyReports(limit = 30): Promise<
-  { id: string; date: string; projectName: string; workDone: string; delays: string | null }[]
+  { id: string; date: string; projectName: string; workDone: string; delays: string | null; photoKeys: string[] }[]
 > {
   const rows = await sql`
-    SELECT d.id, d.date, p.name AS project_name, d.work_done, d.delays
+    SELECT d.id, d.date, p.name AS project_name, d.work_done, d.delays, d.photo_keys
     FROM daily_reports d JOIN projects p ON p.id = d.project_id
     ORDER BY d.date DESC LIMIT ${limit}`;
   return rows.map((r) => ({
@@ -138,6 +140,7 @@ export async function listDailyReports(limit = 30): Promise<
     projectName: r.project_name as string,
     workDone: r.work_done as string,
     delays: r.delays as string | null,
+    photoKeys: (r.photo_keys as string[] | null) ?? [],
   }));
 }
 
