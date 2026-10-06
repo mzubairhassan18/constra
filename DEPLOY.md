@@ -1,31 +1,40 @@
-# Deploy — Vercel (recommended)
+# Deploy — Cloudflare Workers (primary) / Vercel (fallback)
 
-Vercel is the zero-config host for this Next.js 16 app
-(dynamic routes, server actions, proxy gate, Node runtime).
+## Cloudflare Workers (primary)
 
-## Steps (dashboard, ~5 min)
+The app ships a Workers bundle via OpenNext (`wrangler.jsonc`,
+`open-next.config.ts`, `npm run cf:build`). Builds run on
+Cloudflare's Linux CI — the local Windows smoke test hits a
+Windows-only path bug in miniflare, ignore it.
 
-1. vercel.com → Add New → Project → Import
-   `github.com/mzubairhassan18/constra`.
-2. Root Directory: `constra`. Framework: Next.js (auto).
-3. Environment Variables (Production + Preview):
-   - `DATABASE_URL` — Neon pooled connection string
-     (Neon console → constra → Connect → pooled).
-   - `SESSION_SECRET` — fresh random 64-hex (do NOT reuse dev value):
-     `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+### Steps (dashboard)
+
+1. Cloudflare dashboard → Workers & Pages → Create → **Import a
+   repository** → select `github.com/mzubairhassan18/constra`.
+2. Project name: `constra`. Root directory: `constra/`.
+   - Build command: `npm run cf:build`
+   - Deploy command: `npx opennextjs-cloudflare deploy`
+3. Variables (Workers → Settings → Variables + Secrets):
+   - `DATABASE_URL` (Neon pooled string) — plain variable.
+   - `SESSION_SECRET` (fresh 64-hex, do NOT reuse dev value) — **secret**.
    - Optional R2: `R2_ENDPOINT`, `R2_BUCKET=constra-photos`,
-     `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
-     (Cloudflare dashboard → R2 → Manage API tokens).
-   - Optional AI: `AI_GATEWAY_URL`, `AI_GATEWAY_KEY`, `AI_MODEL`.
-4. Deploy. Verify: `/api/health` → `{ok:true, tables:…}`,
-   then login at `/login`.
+     `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (key/secret as secrets).
+     (Cloudflare dashboard → R2 → Manage API tokens.)
+   - Optional AI: `AI_GATEWAY_URL`, `AI_GATEWAY_KEY` (secret), `AI_MODEL`.
+4. Deploy. Verify: `https://constra.<account>.workers.dev/api/health`
+   → `{ok:true}`, then `/login`.
 
-## Why not Cloudflare Workers (yet)
+### Local bundle check (Windows)
 
-Workers need the OpenNext adapter + R2 bindings + compat checks
-for `bcryptjs`/`jose`/Neon-HTTP. Possible later; Vercel works now
-with no code changes. The Neon-HTTP driver and R2-S3 client were
-chosen to keep the Workers option open.
+`npm run cf:build` must end with `Worker saved in .open-next\worker.js`.
+`npx wrangler dev` smoke test is expected to fail on Windows
+(`loadManifest(/.next/...)` path bug) — production/Linux is unaffected.
+
+## Vercel (fallback)
+
+Vercel → Add New → Project → Import `mzubairhassan18/constra`,
+Root Directory `constra/`, env `DATABASE_URL` + `SESSION_SECRET`
+(+ optional R2/AI). Deploy.
 
 ## UAT — villa scenario (after deploy)
 
