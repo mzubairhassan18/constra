@@ -3,8 +3,71 @@
 ## Cloudflare Workers (primary)
 
 The app ships a Workers bundle via OpenNext (`wrangler.jsonc`,
-`open-next.config.ts`, `npm run cf:build`). Build/deploy runs on Linux CI —
-but the bundle also builds and runs on Windows (two patches below).
+`open-next.config.ts`, `npm run cf:build`). It builds on Windows and on
+Linux CI alike (two patches below) — but note that CI is *not* how the
+current live worker was published; see the next section.
+
+Live URL: `https://constra.mzubairhassan18.workers.dev`
+(account `cfea947a3be727f7334acef2dcb7e7e5`).
+
+### Current deployment: direct from a dev machine (GitHub route NOT used)
+
+The first working deployment was pushed **straight to Cloudflare from a dev
+machine**, bypassing the GitHub route entirely — no Workers Builds run and no
+GitHub Actions run were involved. Reproduce it with:
+
+```bash
+npx wrangler login                # OAuth once; no CLOUDFLARE_API_TOKEN needed
+cd constra
+npm ci                            # runs postinstall -> scripts/patch-opennext.mjs
+npm test                          # must be 107 green (CI runs this before cf:build)
+npm run cf:build                  # patch + next build + OpenNext bundle
+npx opennextjs-cloudflare deploy -- --keep-vars
+```
+
+- Auth is the wrangler OAuth token at
+  `%APPDATA%\xdg.config\.wrangler\config\default.toml` — that is why no CI
+  secret was required.
+- `DATABASE_URL` and `SESSION_SECRET` were set once with
+  `npx wrangler secret put <NAME>`; `--keep-vars` keeps them (and the R2
+  binding) across deploys.
+- The GitHub route **is** still configured (dashboard "Import a repository",
+  or `.github/workflows/deploy.yml`) and will work from a push to `main`,
+  because the required patch runs *inside* `cf:build` itself rather than
+  being a local-only step. It has simply not been exercised yet.
+
+### How the broken deployment was resolved
+
+The worker existed but every page 500'd. Four independent faults were
+stacked, each masking the next:
+
+1. **The worker wasn't the app.** `constra` had been created from the
+   `dash_template` placeholder with zero secrets. Fix: deploy the real
+   OpenNext bundle over it and set `DATABASE_URL` + a fresh 64-hex
+   `SESSION_SECRET`.
+2. **OpenNext didn't inline `preview-props.json`.** Next 16.4 loads that file
+   eagerly from the `NextNodeServer` constructor, but OpenNext's inlining glob
+   only matches `{*-manifest,required-server-files,prefetch-hints}.json` —
+   every request died with `Unexpected loadManifest(...)`. Fix:
+   `scripts/patch-opennext.mjs`. `DEPLOY.md` previously blamed a "Windows-only
+   miniflare path bug"; that was wrong, and it is why CI auto-deploy never
+   worked either.
+3. **`cacheComponents` hangs on workerd.** API routes bypass Next's
+   staged-render scheduler, so `/api/health` passed while every *page* hung
+   and got cancelled (`Worker's code had hung`). Fix: `cacheComponents: false`
+   + drop the 17 `export const instant` exports. See "Required patches".
+4. **Skipped migration.** `0008_portal.sql` had never been applied, so
+   `portal_tokens` didn't exist and every `/portal/[token]` link 500'd.
+   Fix: applied the migration (34 tables).
+
+Verified after each fix with `wrangler tail` (not guesswork): bad requests
+stopped producing `Error 1101`, then page renders stopped hanging, then
+`/portal/*` returned 404 instead of 500.
+
+Two real product bugs were found along the way and fixed in the same commit:
+`last_read_at` used the app clock while `messages.created_at` uses the DB
+clock (unread counters never cleared), and ESLint was linting `.open-next/`
+build output (42k bogus problems hiding the 10 real ones).
 
 ### Required patches (do not remove)
 
@@ -33,7 +96,9 @@ the R2 bucket `nextjs-demo-cache` (`NEXT_INC_CACHE_R2_BUCKET`). Without the
 binding the override raises an ignorable error and the worker still works.
 
 
-### Steps (dashboard)
+### Steps (GitHub route — optional, not how the live worker was deployed)
+
+Use this to hand the pipeline over to CI instead of deploying from a machine:
 
 1. Cloudflare dashboard → Workers & Pages → Create → **Import a
    repository** → select `github.com/mzubairhassan18/constra`.
@@ -49,6 +114,11 @@ binding the override raises an ignorable error and the worker still works.
    - Optional AI: `AI_GATEWAY_URL`, `AI_GATEWAY_KEY` (secret), `AI_MODEL`.
 4. Deploy. Verify: `https://constra.<account>.workers.dev/api/health`
    → `{ok:true}`, then `/login`.
+
+For the GitHub Actions path (`.github/workflows/deploy.yml`) additionally set
+repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and
+`DATABASE_URL`; the workflow runs `npm test` then `cf:build`, so the chat
+clock fix must stay green or CI blocks the deploy.
 
 ### Local bundle check
 
