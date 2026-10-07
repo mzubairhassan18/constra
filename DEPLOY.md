@@ -4,17 +4,43 @@
 
 The app ships a Workers bundle via OpenNext (`wrangler.jsonc`,
 `open-next.config.ts`, `npm run cf:build`). It builds on Windows and on
-Linux CI alike (two patches below) — but note that CI is *not* how the
-current live worker was published; see the next section.
+Cloudflare's Linux CI alike (two patches below), so the same command works
+locally and in the auto-deploy pipeline.
 
 Live URL: `https://constra.mzubairhassan18.workers.dev`
 (account `cfea947a3be727f7334acef2dcb7e7e5`).
 
-### Current deployment: direct from a dev machine (GitHub route NOT used)
+### Auto-deploy from GitHub (the supported path)
+
+Pushes to `main` **do** auto-deploy, via Cloudflare's own Git integration
+(**Workers Builds**), not via GitHub Actions. The connection already exists:
+
+- Repo: `mzubairhassan18/constra`, branch `main`, root directory `constra/`
+  (connection `3edf0d64-a9ab-4952-bdea-8e1bbf281e5d`).
+- Build trigger `860ead38-06b1-4c14-b3b3-146573d27158` runs
+  - build: `npm run cf:build`
+  - deploy: `npx opennextjs-cloudflare deploy -- --keep-vars`
+- It reports back to GitHub as the check **`Workers Builds: constra`**, so the
+  commit shows green/red right next to the code.
+- **No secrets are needed in GitHub** — build deps are empty
+  (`environment_variables: {}`) and the deploy authenticates with
+  Cloudflare's own build token. Runtime secrets (`DATABASE_URL`,
+  `SESSION_SECRET`) already live on the worker and survive deploys.
+
+It was previously red because of a **one-character typo in the trigger's
+deploy command**: `--keep-var` instead of `--keep-vars`, so wrangler died at
+the very last step with `Unknown arguments: keep-var, keepVar` — *after* a
+fully successful build, which is why the bundle looked fine locally. Fixed
+2026-10-07 via `PATCH /accounts/{id}/builds/triggers/{trigger_uuid}`.
+
+Re-running a build: Workers & Pages → `constra` → Builds → the failed build →
+**Retry build**, or just push again.
+
+### First bootstrap: direct from a dev machine
 
 The first working deployment was pushed **straight to Cloudflare from a dev
-machine**, bypassing the GitHub route entirely — no Workers Builds run and no
-GitHub Actions run were involved. Reproduce it with:
+machine**, before the Git integration was verified. That path still works and
+is the fallback if the pipeline ever breaks. Reproduce it with:
 
 ```bash
 npx wrangler login                # OAuth once; no CLOUDFLARE_API_TOKEN needed
@@ -25,16 +51,25 @@ npm run cf:build                  # patch + next build + OpenNext bundle
 npx opennextjs-cloudflare deploy -- --keep-vars
 ```
 
-- Auth is the wrangler OAuth token at
+- Auth for the direct path is the wrangler OAuth token at
   `%APPDATA%\xdg.config\.wrangler\config\default.toml` — that is why no CI
   secret was required.
 - `DATABASE_URL` and `SESSION_SECRET` were set once with
   `npx wrangler secret put <NAME>`; `--keep-vars` keeps them (and the R2
   binding) across deploys.
-- The GitHub route **is** still configured (dashboard "Import a repository",
-  or `.github/workflows/deploy.yml`) and will work from a push to `main`,
-  because the required patch runs *inside* `cf:build` itself rather than
-  being a local-only step. It has simply not been exercised yet.
+
+### GitHub Actions path (`.github/workflows/deploy.yml`) — currently blocked
+
+This workflow is a *second*, redundant deploy pipeline (it would race Workers
+Builds on every push). It has never run a single step:
+
+> `The job was not started because your account is locked due to a billing issue.`
+
+Fix it on GitHub → Settings → Billing, and add repo secrets
+`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`. Until then
+every push to `main` will show a red **`deploy`** check — ignore it; the
+authoritative check is `Workers Builds: constra`. It runs `npm test` before
+`cf:build`, so the chat clock fix must stay green or it will block the deploy.
 
 ### How the broken deployment was resolved
 
@@ -96,29 +131,25 @@ the R2 bucket `nextjs-demo-cache` (`NEXT_INC_CACHE_R2_BUCKET`). Without the
 binding the override raises an ignorable error and the worker still works.
 
 
-### Steps (GitHub route — optional, not how the live worker was deployed)
+### Worker settings (shared by every deploy path)
 
-Use this to hand the pipeline over to CI instead of deploying from a machine:
+Whether it deploys from the pipeline or from a machine, the worker needs:
 
-1. Cloudflare dashboard → Workers & Pages → Create → **Import a
-   repository** → select `github.com/mzubairhassan18/constra`.
-2. Project name: `constra`. Root directory: `constra/`.
+1. Project name: `constra`. Root directory: `constra/`.
    - Build command: `npm run cf:build`
-   - Deploy command: `npx opennextjs-cloudflare deploy -- --keep-vars` (`--keep-vars` keeps dashboard vars/secrets across deploys)
-3. Variables (Workers → Settings → Variables + Secrets):
+   - Deploy command: `npx opennextjs-cloudflare deploy -- --keep-vars`
+     (must be `--keep-vars`, not `--keep-var` — see above).
+2. Variables (Workers → Settings → Variables + Secrets):
    - `DATABASE_URL` (Neon pooled string) — **secret** (read at request time).
    - `SESSION_SECRET` (fresh 64-hex, do NOT reuse dev value) — **secret**.
    - Optional R2: `R2_ENDPOINT`, `R2_BUCKET=constra-photos`,
      `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (key/secret as secrets).
      (Cloudflare dashboard → R2 → Manage API tokens.)
    - Optional AI: `AI_GATEWAY_URL`, `AI_GATEWAY_KEY` (secret), `AI_MODEL`.
-4. Deploy. Verify: `https://constra.<account>.workers.dev/api/health`
-   → `{ok:true}`, then `/login`.
-
-For the GitHub Actions path (`.github/workflows/deploy.yml`) additionally set
-repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and
-`DATABASE_URL`; the workflow runs `npm test` then `cf:build`, so the chat
-clock fix must stay green or CI blocks the deploy.
+3. Bindings live in `wrangler.jsonc` (`ASSETS`, `NEXT_INC_CACHE_R2_BUCKET`)
+   and travel with the code — no dashboard step.
+4. Verify: `https://constra.<account>.workers.dev/api/health` → `{ok:true}`,
+   then `/login`.
 
 ### Local bundle check
 
