@@ -38,6 +38,11 @@ overview, read-only. `admin` role exists for office managers (kept, unused).
 - **10 employees**: Khalid (foreman, linked to `foreman` login), Mariam (HR,
   linked to `hr` login), 4 permanent + 4 daily-wage; 9 open assignments,
   12 attendance rows.
+  Roster: Khalid Mansour (Site Foreman, 6.5K/mo), Mariam Al Zaabi (HR Officer,
+  8K/mo), Rajesh Kumar (Mason, 4.5K), Imran Sheikh (Steel Fixer, 4.2K),
+  Fernando D'Souza (Electrician, 5K), Ali Hassan (Driver, 3.8K),
+  Deepak Yadav (Helper, 90/day), Salman Farooq (Carpenter, 110/day),
+  Bijay Tamang (Plumber, 25/hr), Asif Ali (Painter, 100/day).
 - **Money (ledger balanced, Dr = Cr = AED 1,962,288)**: 3 supplier bills with
   5% VAT (+1 exempt line), 2 client invoices (INV-2026-001 part-paid AED 250K
   of 420K → AED 170K due; INV-2026-002 paid in full), 2 manpower crews
