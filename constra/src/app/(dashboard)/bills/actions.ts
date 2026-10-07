@@ -7,6 +7,7 @@ import { billSchema } from "@/modules/finance/schema";
 import { neonAccounts, neonBills, saveBillImage, getBillDetail } from "@/modules/finance/adapters/bills-neon";
 import { postJournalEntry } from "@/modules/finance/adapters/post-entry-neon";
 import { recordSupplierBill } from "@/modules/finance/use-cases/record-bill";
+import { fanout } from "@/modules/notify/adapters/notify-neon";
 import { putPhoto, r2Enabled } from "@/lib/r2";
 
 async function requireFinance(): Promise<boolean> {
@@ -99,6 +100,13 @@ export async function createBillAction(
   }
   revalidatePath("/bills");
   revalidatePath("/finance");
+  const detail = await getBillDetail(billId).catch(() => null);
+  await fanout({
+    kind: "bill_posted",
+    billId,
+    label: detail?.invoiceNo ?? d.invoiceNo ?? "supplier bill",
+    gross: detail?.gross ?? 0,
+  });
   if (failed > 0) {
     return { warning: `Bill posted, but ${failed} attachment(s) failed to upload.` };
   }

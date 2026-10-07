@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getSessionUser } from "@/lib/session";
 import { can } from "@/modules/auth/domain/types";
 import { putPhoto, r2Enabled, reportPhotoKey } from "@/lib/r2";
+import sql from "@/lib/db";
 import { fanout } from "@/modules/notify/adapters/notify-neon";
 import {
   neonOpsAccounts,
@@ -112,7 +113,13 @@ export async function createRequestAction(
     notes: parsed.data.notes || undefined,
     lines,
   });
+  let projectName = "a project";
+  if (parsed.data.projectId) {
+    const p = await sql`SELECT name FROM projects WHERE id = ${parsed.data.projectId}`;
+    if (p.length > 0) projectName = String(p[0].name);
+  }
   void user;
+  await fanout({ kind: "request_filed", projectName, itemCount: lines.length });
   revalidatePath("/operations");
   return {};
 }
@@ -123,6 +130,7 @@ export async function setRequestStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   if (!id || !["approved", "rejected", "fulfilled"].includes(status)) return;
   await neonOpsStore.setRequestStatus(id, status as "approved" | "rejected" | "fulfilled");
+  await fanout({ kind: "request_decided", status, projectName: "site operations" });
   revalidatePath("/operations");
 }
 

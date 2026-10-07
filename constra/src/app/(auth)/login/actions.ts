@@ -5,6 +5,7 @@ import { z } from "zod";
 import { login } from "@/modules/auth/use-cases/login";
 import { neonUsers } from "@/modules/auth/adapters/users-neon";
 import { createSession, destroySession } from "@/lib/session";
+import { homeFor } from "@/lib/access";
 
 const credentials = z.object({
   username: z.string().trim().min(1, "Username is required").max(100),
@@ -41,7 +42,7 @@ export async function loginAction(
     };
   }
   await createSession(result.user);
-  redirect("/dashboard");
+  redirect(homeFor(result.user));
 }
 
 export async function logoutAction(): Promise<void> {

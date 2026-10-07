@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { requireAccess } from "@/lib/access";
 import AskBox from "./AskBox";
 
 export default async function AskPage() {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess();
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between">

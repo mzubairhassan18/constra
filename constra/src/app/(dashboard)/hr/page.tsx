@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { requireAccess } from "@/lib/access";
 import { listEmployees } from "@/modules/hr/adapters/employees-neon";
 import { openAssignments } from "@/modules/hr/adapters/assignments-neon";
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
@@ -12,7 +11,7 @@ const input =
 const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";
 
 export default async function HrPage() {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess("hr.read");
   const [employees, open, projects] = await Promise.all([
     listEmployees(),
     openAssignments(),

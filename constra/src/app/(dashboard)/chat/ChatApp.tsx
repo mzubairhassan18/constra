@@ -47,8 +47,21 @@ export default function ChatApp() {
   }, [loadList]);
 
   useEffect(() => {
-    void loadList();
-  }, [loadList]);
+    let cancelled = false;
+    fetch("/api/chat")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j && !cancelled) {
+          setConvs(j.conversations);
+          setPeers(j.users);
+          setMe(j.me);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!active) return;

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { notFound } from "next/navigation";
+import { requireAccess } from "@/lib/access";
 import { getEmployee } from "@/modules/hr/adapters/employees-neon";
 
 export default async function EmployeeDetailPage({
@@ -8,7 +8,7 @@ export default async function EmployeeDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess("hr.read");
   const { id } = await params;
   const emp = await getEmployee(id);
   if (!emp) notFound();

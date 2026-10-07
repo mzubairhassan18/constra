@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAccess } from "@/lib/access";
 import {
   recentEntries,
   trialBalance,
@@ -18,6 +19,7 @@ const aed = (n: number) =>
   `AED ${n.toLocaleString("en-AE", { maximumFractionDigits: 2 })}`;
 
 export default async function FinancePage() {
+  await requireAccess("finance.read");
   const [entries, trial, vat, invoices, projects] = await Promise.all([
     recentEntries(20),
     trialBalance(),

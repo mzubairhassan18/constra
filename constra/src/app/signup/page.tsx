@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { homeFor } from "@/lib/access";
 
 export default async function SignupPage() {
-  if (await getSessionUser()) redirect("/dashboard");
+  const me = await getSessionUser();
+  if (me) redirect(homeFor(me));
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center gap-5 p-6">
       <div>

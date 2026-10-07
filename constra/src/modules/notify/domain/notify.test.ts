@@ -15,6 +15,7 @@ const ROLES: Record<string, RoleEntry> = {
   "u-acct": { role: "accountant", permissions: ["finance.*"] },
   "u-foreman": { role: "foreman", permissions: ["operations.report"] },
   "u-foreman-2": { role: "foreman", permissions: ["operations.report"] },
+  "u-hr": { role: "hr", permissions: ["hr.*"] },
   "u-client": { role: "client", permissions: ["portal.read"] },
 };
 
@@ -175,14 +176,14 @@ describe("buildNotifications — assignment_moved", () => {
     toProjectId: "p-2",
   };
 
-  it("notifies the moved employee plus foremen (not admins/clients)", () => {
+  it("notifies the moved employee plus foremen and HR (not admins/clients)", () => {
     const roles = asRolesMap({
       ...ROLES,
       "u-wager": { role: "foreman", permissions: ["operations.report"] },
     });
     const out = buildNotifications(event, roles);
     expect(userIds(out).sort()).toEqual(
-      ["u-foreman", "u-foreman-2", "u-wager"].sort(),
+      ["u-foreman", "u-foreman-2", "u-hr", "u-super", "u-wager"].sort(),
     );
     expect(userIds(out)).not.toContain("u-admin");
     expect(userIds(out)).not.toContain("u-client");
@@ -197,6 +198,57 @@ describe("buildNotifications — assignment_moved", () => {
     const out = buildNotifications(dup, roles);
     expect(userIds(out)).toEqual(["u-foreman"]);
     expectNoDuplicates(out);
+  });
+});
+
+describe("buildNotifications — money + site events", () => {
+  it("bill_posted notifies admins + accountants with /bills link", () => {
+    const out = buildNotifications(
+      { kind: "bill_posted", billId: "b-2", label: "INV-9", gross: 1050 },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(out).sort()).toEqual(["u-acct", "u-admin", "u-super"].sort());
+    for (const n of out) expect(n.link).toBe("/bills");
+    expectNoDuplicates(out);
+  });
+
+  it("invoice_posted + payment_received notify admins + accountants", () => {
+    const inv = buildNotifications(
+      { kind: "invoice_posted", invoiceId: "i-1", label: "INV-1", gross: 2100 },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(inv).sort()).toEqual(["u-acct", "u-admin", "u-super"].sort());
+    const pay = buildNotifications(
+      { kind: "payment_received", invoiceId: "i-1", label: "INV-1", amount: 1000 },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(pay).sort()).toEqual(["u-acct", "u-admin", "u-super"].sort());
+    expect(userIds(pay)).not.toContain("u-client");
+  });
+
+  it("request_filed notifies admins; request_decided notifies foremen + admins", () => {
+    const filed = buildNotifications(
+      { kind: "request_filed", projectName: "Villa", itemCount: 3 },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(filed).sort()).toEqual(["u-admin", "u-super"].sort());
+    const decided = buildNotifications(
+      { kind: "request_decided", status: "approved", projectName: "Villa" },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(decided).sort()).toEqual(
+      ["u-admin", "u-foreman", "u-foreman-2", "u-super"].sort(),
+    );
+  });
+
+  it("client_message notifies admins with /client link, never the client", () => {
+    const out = buildNotifications(
+      { kind: "client_message", fromName: "Client", projectName: "Villa" },
+      asRolesMap(ROLES),
+    );
+    expect(userIds(out).sort()).toEqual(["u-admin", "u-super"].sort());
+    expect(userIds(out)).not.toContain("u-client");
+    for (const n of out) expect(n.link).toBe("/client");
   });
 });
 

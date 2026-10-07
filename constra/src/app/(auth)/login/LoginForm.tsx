@@ -25,6 +25,12 @@ const ROLE_TABS = [
     username: "",
   },
   {
+    id: "hr",
+    label: "HR Officer",
+    hint: "Employees, assignments, attendance & payroll.",
+    username: "",
+  },
+  {
     id: "client",
     label: "Client",
     hint: "Read-only portal via magic link — no password needed.",
@@ -40,7 +46,7 @@ export default function LoginForm() {
   return (
     <div className="flex flex-col gap-4">
       <div
-        className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:grid-cols-4 dark:bg-slate-800"
+        className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:grid-cols-5 dark:bg-slate-800"
         role="tablist"
         aria-label="Sign in as"
       >

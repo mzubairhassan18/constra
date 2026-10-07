@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { notFound } from "next/navigation";
+import { requireAccess } from "@/lib/access";
 import { getProjectDetail } from "@/modules/projects/adapters/projects-neon";
 import {
   addStageAction,
@@ -21,7 +21,7 @@ export default async function ProjectDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess("projects.read");
   const { id } = await params;
   const detail = await getProjectDetail(id);
   if (!detail) notFound();

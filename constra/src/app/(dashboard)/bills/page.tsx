@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAccess } from "@/lib/access";
 import { listBills } from "@/modules/finance/adapters/bills-neon";
 import { listSuppliers } from "@/modules/finance/adapters/ledger-neon";
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
@@ -13,6 +14,7 @@ const aed = (n: number) =>
   `AED ${n.toLocaleString("en-AE", { maximumFractionDigits: 2 })}`;
 
 export default async function BillsPage() {
+  await requireAccess("bills.read");
   const [bills, suppliers, projects] = await Promise.all([
     listBills(),
     listSuppliers(),

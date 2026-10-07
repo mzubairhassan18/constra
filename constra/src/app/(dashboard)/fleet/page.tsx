@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { requireAccess } from "@/lib/access";
 import {
   listQuotations,
   listVehicles,
@@ -12,7 +11,7 @@ const input =
 const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";
 
 export default async function FleetPage() {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess("fleet.read");
   const [vehicles, quotations] = await Promise.all([listVehicles(), listQuotations()]);
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6">

@@ -3,24 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { NavItem } from "@/lib/access";
 
-const NAV = [
+const FALLBACK_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/projects", label: "Projects", icon: "🏗️" },
-  { href: "/hr", label: "HR", icon: "👷" },
-  { href: "/bills", label: "Bills", icon: "🧾" },
-  { href: "/finance", label: "Finance", icon: "💰" },
-  { href: "/operations", label: "Operations", icon: "🚚" },
-  { href: "/fleet", label: "Fleet", icon: "🚛" },
-  { href: "/masters", label: "Masters", icon: "📚" },
-  { href: "/chat", label: "Team chat", icon: "💬" },
-  { href: "/ask", label: "AI ask", icon: "🤖" },
-  { href: "/users", label: "Users", icon: "👥" },
 ];
 
 type FontSize = "small" | "medium" | "large";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  nav,
+}: {
+  children: React.ReactNode;
+  nav?: (NavItem & { badge?: number })[];
+}) {
+  const items: (NavItem & { badge?: number })[] = nav ?? FALLBACK_NAV;
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [fontSize, setFontSize] = useState<FontSize>(() => {
@@ -45,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <p className="text-xs text-slate-300">Construction ERP · UAE</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
-          {NAV.map((n) => {
+          {items.map((n) => {
             const active =
               pathname === n.href || pathname?.startsWith(`${n.href}/`);
             return (
@@ -59,6 +57,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <span aria-hidden>{n.icon}</span> {n.label}
+                {n.badge ? (
+                  <span className="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">
+                    {n.badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -94,6 +97,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Constra<span className="text-amber-500">.</span>
           </p>
           <div className="flex items-center gap-2">
+            <Link
+              href="/notifications"
+              className="constra-btn-ghost relative px-2.5 py-1.5"
+              aria-label={`Notifications${items.find((n) => n.href === "/notifications")?.badge ? ` (${items.find((n) => n.href === "/notifications")?.badge} unread)` : ""}`}
+            >
+              🔔
+              {(items.find((n) => n.href === "/notifications")?.badge ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-black">
+                  {items.find((n) => n.href === "/notifications")?.badge}
+                </span>
+              )}
+            </Link>
             <div className="flex gap-1" role="group" aria-label="Text size">
               {(["small", "medium", "large"] as FontSize[]).map((s) => (
                 <button
@@ -124,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         {menuOpen && (
           <nav className="grid grid-cols-2 gap-2 border-b border-slate-200 p-4 md:hidden dark:border-slate-800">
-            {NAV.map((n) => (
+            {items.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
@@ -132,6 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="constra-btn-ghost text-center"
               >
                 <span aria-hidden>{n.icon}</span> {n.label}
+                {n.badge ? ` (${n.badge})` : ""}
               </Link>
             ))}
           </nav>

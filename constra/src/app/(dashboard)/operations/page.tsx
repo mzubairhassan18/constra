@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
+import { requireAccess } from "@/lib/access";
 import {
   listDailyReports,
   listManpower,
@@ -9,9 +8,6 @@ import {
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
 import {
   clearBalanceAction,
-  createManpowerAction,
-  createReportAction,
-  createRequestAction,
   setRequestStatusAction,
 } from "./actions";
 import ManpowerForm from "./ManpowerForm";
@@ -19,11 +15,9 @@ import RequestForm from "./RequestForm";
 import ReportForm from "./ReportForm";
 
 const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";
-const input =
-  "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 
 export default async function OperationsPage() {
-  if (!(await getSessionUser())) redirect("/login");
+  await requireAccess("operations.read");
   const [entries, requests, reports, projects] = await Promise.all([
     listManpower(),
     listMaterialRequests(),

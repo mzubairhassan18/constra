@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { homeFor } from "@/lib/access";
 import LoginForm from "./LoginForm";
 
 export default async function LoginPage() {
-  if (await getSessionUser()) redirect("/dashboard");
+  const me = await getSessionUser();
+  if (me) redirect(homeFor(me));
   return (
     <main className="flex min-h-screen">
       <div className="hidden flex-1 flex-col justify-between bg-[#0f2340] p-10 text-white lg:flex">

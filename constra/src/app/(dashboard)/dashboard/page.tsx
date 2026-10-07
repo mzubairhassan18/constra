@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSessionUser } from "@/lib/session";
+import { requireAccess } from "@/lib/access";
 import { logoutAction } from "@/app/(auth)/login/actions";
 import { unreadCount } from "@/modules/notify/adapters/notify-neon";
 import { trialBalance, vatPosition } from "@/modules/finance/adapters/ledger-neon";
@@ -13,8 +13,7 @@ const aed = (n: number) =>
   `AED ${n.toLocaleString("en-AE", { maximumFractionDigits: 0 })}`;
 
 export default async function DashboardPage() {
-  const user = await getSessionUser();
-  if (!user) return null;
+  const user = await requireAccess();
 
   const [projects, employees, stages, unread, trial, vat, invoices, recentBills] =
     await Promise.all([

@@ -4,6 +4,7 @@ export type RoleName =
   | "admin"
   | "foreman"
   | "accountant"
+  | "hr"
   | "client";
 
 export interface SessionUser {

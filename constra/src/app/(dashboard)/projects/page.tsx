@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { requireAccess } from "@/lib/access";
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
 import NewProjectForm from "./NewProjectForm";
 import { Card, StatusChip } from "@/ui/cards";
 import { DataTable } from "@/ui/data-table";
 
 export default async function ProjectsPage() {
+  await requireAccess("projects.read");
   const projects = await listProjects();
   const aed = (n: number) =>
     `AED ${n.toLocaleString("en-AE", { maximumFractionDigits: 0 })}`;

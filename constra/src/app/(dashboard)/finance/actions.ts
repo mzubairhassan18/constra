@@ -13,6 +13,7 @@ import {
   recordClientInvoice,
   recordReceipt,
 } from "@/modules/finance/use-cases/record-bill";
+import { fanout } from "@/modules/notify/adapters/notify-neon";
 
 async function requireFinance(): Promise<boolean> {
   const user = await getSessionUser();
@@ -38,7 +39,7 @@ export async function createInvoiceAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   const d = parsed.data;
-  await recordClientInvoice(neonBills, { post: postJournalEntry }, neonAccounts, {
+  const invoiceId = await recordClientInvoice(neonBills, { post: postJournalEntry }, neonAccounts, {
     projectId: d.projectId,
     stageId: d.stageId || undefined,
     invoiceNo: d.invoiceNo || undefined,
@@ -49,6 +50,12 @@ export async function createInvoiceAction(
       discount: l.discount,
       taxCode: l.taxCode,
     })),
+  });
+  await fanout({
+    kind: "invoice_posted",
+    invoiceId,
+    label: d.invoiceNo || "client invoice",
+    gross: d.lines.reduce((n, l) => n + l.qty * l.unitPrice, 0),
   });
   revalidatePath("/finance");
   return {};
@@ -66,6 +73,12 @@ export async function createReceiptAction(formData: FormData) {
     invoiceId: parsed.data.invoiceId,
     amount: Number(parsed.data.amount),
     method: parsed.data.method || undefined,
+  });
+  await fanout({
+    kind: "payment_received",
+    invoiceId: parsed.data.invoiceId,
+    label: "client invoice",
+    amount: Number(parsed.data.amount),
   });
   revalidatePath("/finance");
 }
