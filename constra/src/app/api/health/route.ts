@@ -1,6 +1,8 @@
+import { connection } from "next/server";
 import sql from "@/lib/db";
 
 export async function GET() {
+  await connection(); // request-time only: CI builds have no DATABASE_URL
   const rows =
     await sql`SELECT count(*)::int AS tables FROM pg_tables WHERE schemaname = 'public'`;
   const roles =
