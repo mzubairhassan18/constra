@@ -13,7 +13,7 @@ Windows-only path bug in miniflare, ignore it.
    repository** → select `github.com/mzubairhassan18/constra`.
 2. Project name: `constra`. Root directory: `constra/`.
    - Build command: `npm run cf:build`
-   - Deploy command: `npx opennextjs-cloudflare deploy`
+   - Deploy command: `npx opennextjs-cloudflare deploy -- --keep-vars` (`--keep-vars` keeps dashboard vars/secrets across deploys)
 3. Variables (Workers → Settings → Variables + Secrets):
    - `DATABASE_URL` (Neon pooled string) — plain variable.
    - `SESSION_SECRET` (fresh 64-hex, do NOT reuse dev value) — **secret**.
