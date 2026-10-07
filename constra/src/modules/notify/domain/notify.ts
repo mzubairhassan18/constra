@@ -25,7 +25,7 @@ export interface BuiltNotification {
 export type RolesMap = Record<string, { role: RoleName; permissions: string[] }>;
 
 const isAdmin = (r: { role: RoleName }): boolean =>
-  r.role === "super_admin" || r.role === "admin";
+  r.role === "super_admin" || r.role === "admin" || r.role === "owner";
 const isAccountant = (r: { role: RoleName }): boolean =>
   r.role === "accountant" || r.role === "super_admin";
 const isForeman = (r: { role: RoleName }): boolean =>

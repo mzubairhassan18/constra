@@ -133,7 +133,6 @@ binding the override raises an ignorable error and the worker still works.
 
 
 ### Worker settings (shared by every deploy path)
-
 Whether it deploys from the pipeline or from a machine, the worker needs:
 
 1. Project name: `constra`. Root directory: `constra/`.
@@ -145,12 +144,35 @@ Whether it deploys from the pipeline or from a machine, the worker needs:
    - `SESSION_SECRET` (fresh 64-hex, do NOT reuse dev value) — **secret**.
    - Optional R2: `R2_ENDPOINT`, `R2_BUCKET=constra-photos`,
      `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (key/secret as secrets).
-     (Cloudflare dashboard → R2 → Manage API tokens.)
+     (Cloudflare dashboard → R2 → Manage API tokens — full 2-minute guide below in “Creating the R2 API key”.)
    - Optional AI: `AI_GATEWAY_URL`, `AI_GATEWAY_KEY` (secret), `AI_MODEL`.
 3. Bindings live in `wrangler.jsonc` (`ASSETS`, `NEXT_INC_CACHE_R2_BUCKET`)
    and travel with the code — no dashboard step.
 4. Verify: `https://constra.<account>.workers.dev/api/health` → `{ok:true}`,
    then `/login`.
+
+### Creating the R2 API key (once, ~2 min)
+
+Bill/report photo uploads need four values. Without them the app warns and
+skips uploads — everything else works.
+
+1. Cloudflare dashboard -> **R2 Object Storage** -> if no bucket yet,
+   **Create bucket** named `constra-photos` (accept defaults).
+2. R2 -> **Manage R2 API tokens** (top-right) -> **Create API token** ->
+   name it e.g. `constra-worker`, permission **Object Read & Write**,
+   scope **Apply to specific buckets only** -> select `constra-photos` ->
+   **Create API Token**.
+3. Cloudflare shows three values **once** - copy them now:
+   `Access Key ID` -> `R2_ACCESS_KEY_ID`, `Secret Access Key` ->
+   `R2_SECRET_ACCESS_KEY`. `R2_ENDPOINT` is
+   `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` (ACCOUNT_ID is on
+   the R2 overview page / Workers dashboard).
+4. Workers & Pages -> `constra` -> Settings -> Variables + Secrets: add
+   `R2_BUCKET` = `constra-photos` (plain variable) and the other three
+   (endpoint as variable; key ID + secret as **secrets**). Redeploy
+   (or wait for the next push) to pick them up.
+5. Local dev: same four values go in `constra/.env.local`. Never commit
+   them - `.env.local` is git-ignored.
 
 ### Local bundle check
 

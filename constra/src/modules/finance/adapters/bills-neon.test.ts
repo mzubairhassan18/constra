@@ -10,16 +10,24 @@ import {
 const post = { post: postJournalEntry };
 
 afterAll(async () => {
-  // Scoped by ref prefix (bill:/invoice:) — memo scoping collides with other suites.
-  await sql`
-    DELETE FROM transaction_lines l USING transactions t
-    WHERE l.transaction_id = t.id AND (t.ref LIKE 'bill:%' OR t.ref LIKE 'invoice:%')`;
+  // Scoped strictly to __test rows: refs embed the row id, so collect first.
+  const bb = await sql`SELECT id FROM bills WHERE invoice_no LIKE '__test%'`;
+  const ii = await sql`SELECT id FROM client_invoices WHERE invoice_no LIKE '__test%'`;
+  const refs = [
+    ...bb.map((r) => `bill:${r.id as string}`),
+    ...ii.map((r) => `invoice:${r.id as string}`),
+  ];
+  if (refs.length > 0) {
+    await sql`DELETE FROM transaction_lines WHERE transaction_id IN (SELECT id FROM transactions WHERE ref = ANY(${refs}))`;
+  }
   await sql`DELETE FROM bill_lines WHERE bill_id IN (SELECT id FROM bills WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM bill_images WHERE bill_id IN (SELECT id FROM bills WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM bills WHERE invoice_no LIKE '__test%'`;
   await sql`DELETE FROM client_receipts WHERE invoice_id IN (SELECT id FROM client_invoices WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM client_invoices WHERE invoice_no LIKE '__test%'`;
-  await sql`DELETE FROM transactions WHERE ref LIKE 'bill:%' OR ref LIKE 'invoice:%'`;
+  if (refs.length > 0) {
+    await sql`DELETE FROM transactions WHERE ref = ANY(${refs})`;
+  }
 });
 
 describe("bills end-to-end (neon)", () => {

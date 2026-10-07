@@ -7,6 +7,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     // Neon serverless compute cold-starts; integration tests need headroom.
     testTimeout: 60000,
+    hookTimeout: 60000,
   },
   resolve: {
     alias: { "@": import.meta.dirname + "/src" },

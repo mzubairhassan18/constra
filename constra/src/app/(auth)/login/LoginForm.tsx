@@ -7,46 +7,52 @@ const initial: LoginState = {};
 
 const ROLE_TABS = [
   {
-    id: "admin",
-    label: "Owner / Admin",
-    hint: "Full access — dashboard, users, ledger.",
-    username: "admin",
+    id: "super_admin",
+    label: "Super Admin",
+    hint: "IT super-user — everything, including users & roles.",
+    username: "superadmin",
+  },
+  {
+    id: "owner",
+    label: "Owner",
+    hint: "Company overview: dashboards, projects, money — read-only.",
+    username: "owner",
   },
   {
     id: "accountant",
     label: "Accountant",
     hint: "Bills, invoices, VAT, statements.",
-    username: "",
+    username: "accountant",
   },
   {
     id: "foreman",
     label: "Foreman",
     hint: "Attendance, reports, requests — mobile-first.",
-    username: "",
+    username: "foreman",
   },
   {
     id: "hr",
     label: "HR Officer",
     hint: "Employees, assignments, attendance & payroll.",
-    username: "",
+    username: "hr",
   },
   {
     id: "client",
     label: "Client",
     hint: "Read-only portal via magic link — no password needed.",
-    username: "",
+    username: "client",
   },
 ] as const;
 
 export default function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initial);
-  const [tab, setTab] = useState<(typeof ROLE_TABS)[number]["id"]>("admin");
+  const [tab, setTab] = useState<(typeof ROLE_TABS)[number]["id"]>("owner");
   const active = ROLE_TABS.find((t) => t.id === tab)!;
 
   return (
     <div className="flex flex-col gap-4">
       <div
-        className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:grid-cols-5 dark:bg-slate-800"
+        className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:grid-cols-3 dark:bg-slate-800"
         role="tablist"
         aria-label="Sign in as"
       >
@@ -87,8 +93,8 @@ export default function LoginForm() {
             defaultValue={active.username}
             key={active.id}
             placeholder={
-              tab === "admin"
-                ? "e.g. admin"
+              tab === "super_admin"
+                ? "e.g. superadmin"
                 : tab === "client"
                   ? "e.g. client_marina"
                   : "e.g. ahmed.foreman"

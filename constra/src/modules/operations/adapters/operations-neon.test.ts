@@ -14,9 +14,16 @@ import {
 const post = { post: postJournalEntry };
 
 afterAll(async () => {
-  await sql`DELETE FROM transaction_lines l USING transactions t WHERE l.transaction_id = t.id AND t.ref LIKE 'manpower%'`;
+  // Scoped strictly to __test rows (entry ids are embedded in refs).
+  const te = await sql`SELECT id FROM manpower_entries WHERE name LIKE '__test%'`;
+  const refs = te.flatMap((r) => [`manpower:${r.id as string}`, `manpower-clear:${r.id as string}`]);
+  if (refs.length > 0) {
+    await sql`DELETE FROM transaction_lines WHERE transaction_id IN (SELECT id FROM transactions WHERE ref = ANY(${refs}))`;
+  }
   await sql`DELETE FROM manpower_entries WHERE name LIKE '__test%'`;
-  await sql`DELETE FROM transactions WHERE ref LIKE 'manpower%'`;
+  if (refs.length > 0) {
+    await sql`DELETE FROM transactions WHERE ref = ANY(${refs})`;
+  }
 });
 
 describe("manpower end-to-end (neon)", () => {
