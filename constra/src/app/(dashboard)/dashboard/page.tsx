@@ -25,7 +25,7 @@ export default async function DashboardPage() {
       trialBalance(),
       vatPosition(),
       listInvoices(),
-      sql`SELECT b.id, b.invoice_no, b.total, b.created_at, s.name AS supplier
+      sql`SELECT b.id, b.invoice_no, b.gross AS total, b.created_at, s.name AS supplier
           FROM bills b LEFT JOIN suppliers s ON s.id = b.supplier_id
           ORDER BY b.created_at DESC LIMIT 6`,
     ]);
