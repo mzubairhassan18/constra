@@ -26,6 +26,8 @@ Pushes to `main` **do** auto-deploy, via Cloudflare's own Git integration
   (`environment_variables: {}`) and the deploy authenticates with
   Cloudflare's own build token. Runtime secrets (`DATABASE_URL`,
   `SESSION_SECRET`) already live on the worker and survive deploys.
+- **It does not run `npm test`.** Run `npm test` locally before you push —
+  nothing else gates the deploy.
 
 It was previously red because of a **one-character typo in the trigger's
 deploy command**: `--keep-var` instead of `--keep-vars`, so wrangler died at
@@ -58,18 +60,17 @@ npx opennextjs-cloudflare deploy -- --keep-vars
   `npx wrangler secret put <NAME>`; `--keep-vars` keeps them (and the R2
   binding) across deploys.
 
-### GitHub Actions path (`.github/workflows/deploy.yml`) — currently blocked
+### GitHub Actions workflow — removed
 
-This workflow is a *second*, redundant deploy pipeline (it would race Workers
-Builds on every push). It has never run a single step:
+`.github/workflows/deploy.yml` has been **deleted** (2026-10-07). It was a
+second deploy pipeline that would have raced Workers Builds on every push,
+and it could never have run anyway:
 
 > `The job was not started because your account is locked due to a billing issue.`
 
-Fix it on GitHub → Settings → Billing, and add repo secrets
-`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`. Until then
-every push to `main` will show a red **`deploy`** check — ignore it; the
-authoritative check is `Workers Builds: constra`. It runs `npm test` before
-`cf:build`, so the chat clock fix must stay green or it will block the deploy.
+Keep it that way unless you want two deploys per push. If you ever bring it
+back, it needs repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+and `DATABASE_URL`, and it must **not** run alongside Workers Builds.
 
 ### How the broken deployment was resolved
 
