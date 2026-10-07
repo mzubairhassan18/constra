@@ -54,7 +54,7 @@ export default function LoginForm() {
             className={`rounded-lg px-2 py-2 text-xs font-bold transition-colors ${
               tab === t.id
                 ? "bg-white text-slate-900 shadow dark:bg-slate-900 dark:text-white"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+                : "text-slate-600 hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
             }`}
           >
             {t.label}

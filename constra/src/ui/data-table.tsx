@@ -5,7 +5,7 @@ export type Column<T> = {
   align?: "left" | "right";
 };
 
-export function DataTable<T extends { id?: string | number }>({
+export function DataTable<T>({
   columns,
   rows,
   empty = "Nothing here yet.",
@@ -34,7 +34,7 @@ export function DataTable<T extends { id?: string | number }>({
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={String(r.id ?? `${c0(i)}`)}>
+            <tr key={rowKey(r, i)}>
               {columns.map((c) => (
                 <td
                   key={c.key}
@@ -61,6 +61,10 @@ export function DataTable<T extends { id?: string | number }>({
   );
 }
 
-function c0(i: number): string {
+function rowKey<T>(r: T, i: number): string {
+  if (typeof r === "object" && r !== null && "id" in r) {
+    const id = (r as { id?: unknown }).id;
+    if (typeof id === "string" || typeof id === "number") return String(id);
+  }
   return `row-${i}`;
 }

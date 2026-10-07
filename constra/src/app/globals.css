@@ -143,3 +143,73 @@ body {
 .constra-table tbody tr:last-child td {
   border-bottom: 0;
 }
+
+/* Marketing motion (CSS-only: zero JS bundle, SSR/Workers-safe) */
+@keyframes constra-hero-zoom {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes constra-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes constra-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.constra-hero-img {
+  animation: constra-hero-zoom 6s ease-out both;
+}
+.constra-float {
+  animation: constra-float 5s ease-in-out infinite;
+}
+.constra-marquee-track {
+  animation: constra-marquee 28s linear infinite;
+}
+.constra-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.constra-lift {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+.constra-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgb(15 35 64 / 0.14);
+  border-color: var(--accent-500);
+}
+.constra-zoom-img img {
+  transition: transform 0.5s ease;
+}
+.constra-zoom-img:hover img {
+  transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .constra-hero-img,
+  .constra-float,
+  .constra-marquee-track {
+    animation: none;
+  }
+  .constra-lift:hover,
+  .constra-zoom-img:hover img {
+    transform: none;
+  }
+}
