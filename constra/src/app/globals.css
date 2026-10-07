@@ -144,6 +144,25 @@ body {
   border-bottom: 0;
 }
 
+/* Print: only the invoice travels to paper/PDF */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    padding: 16px;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
 /* Marketing motion (CSS-only: zero JS bundle, SSR/Workers-safe) */
 @keyframes constra-hero-zoom {
   from {

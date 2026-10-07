@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import sql from "@/lib/db";
-import { neonAccounts, neonBills } from "./bills-neon";
+import { getBillDetail, listBillImages, neonAccounts, neonBills, saveBillImage } from "./bills-neon";
 import { postJournalEntry } from "./post-entry-neon";
 import {
   recordClientInvoice,
@@ -15,6 +15,7 @@ afterAll(async () => {
     DELETE FROM transaction_lines l USING transactions t
     WHERE l.transaction_id = t.id AND (t.ref LIKE 'bill:%' OR t.ref LIKE 'invoice:%')`;
   await sql`DELETE FROM bill_lines WHERE bill_id IN (SELECT id FROM bills WHERE invoice_no LIKE '__test%')`;
+  await sql`DELETE FROM bill_images WHERE bill_id IN (SELECT id FROM bills WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM bills WHERE invoice_no LIKE '__test%'`;
   await sql`DELETE FROM client_receipts WHERE invoice_id IN (SELECT id FROM client_invoices WHERE invoice_no LIKE '__test%')`;
   await sql`DELETE FROM client_invoices WHERE invoice_no LIKE '__test%'`;
@@ -35,6 +36,21 @@ describe("bills end-to-end (neon)", () => {
       SELECT COALESCE(SUM(debit),0) AS d, COALESCE(SUM(credit),0) AS c
       FROM transaction_lines WHERE transaction_id = ${bills[0].transaction_id as string}`;
     expect(Number(trial[0].d)).toBe(Number(trial[0].c));
+  });
+
+  it("bill attachments round-trip and appear in detail", async () => {
+    const billId = await recordSupplierBill(neonBills, post, neonAccounts, {
+      invoiceNo: "__test-inv-img",
+      lines: [{ qty: 1, unitPrice: 50, taxCode: "standard", description: "Sand" }],
+    });
+    await saveBillImage({ billId, key: `bills/${billId}/__test-receipt.jpg`, mime: "image/jpeg", size: 1234 });
+    const imgs = await listBillImages(billId);
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0].key).toContain("__test-receipt.jpg");
+    const detail = await getBillDetail(billId);
+    expect(detail?.lines).toHaveLength(1);
+    expect(detail?.images).toHaveLength(1);
+    expect(detail?.gross).toBe(52.5);
   });
 
   it("client invoice persists with receivable/revenue/VAT-Out entry", async () => {
