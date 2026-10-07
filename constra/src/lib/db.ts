@@ -1,4 +1,12 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+
+type Sql = NeonQueryFunction<false, false>;
+
+function fresh(): Sql {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set");
+  return neon(url);
+}
 
 /**
  * Per-invocation Neon client (no global caching).
@@ -6,32 +14,19 @@ import { neon } from "@neondatabase/serverless";
  * OpenNext/Workers troubleshooting mandates this: clients instantiated
  * once and reused across requests crash with "Cannot perform I/O on
  * behalf of a different request". The HTTP driver is stateless, so a
- * fresh client per call is cheap and safe. DATABASE_URL is still read
- * lazily so builds (no env) don't crash at import time.
+ * fresh client per call is cheap and safe. The URL is read lazily so
+ * builds (no env) don't crash at import time.
  */
-function fresh() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set");
-  return neon(url);
-}
-
-type Tag = ReturnType<typeof neon>;
-
-const sql = Object.assign(
-  function (strings: TemplateStringsArray, ...values: unknown[]) {
-    return (fresh() as unknown as (
-      s: TemplateStringsArray,
-      ...v: unknown[]
-    ) => Promise<Record<string, unknown>[]>)(
-      strings as TemplateStringsArray,
-      ...values
-    );
+const sql = new Proxy(function () {}, {
+  apply(_t, _thisArg, args: unknown[]) {
+    const client = fresh() as unknown as (
+      ...a: unknown[]
+    ) => Promise<Record<string, unknown>[]>;
+    return client(...args);
   },
-  {
-    query(text: string, params: unknown[]) {
-      return fresh().query(text, params as never[]);
-    },
+  get(_t, prop: string | symbol) {
+    return (fresh() as unknown as Record<string | symbol, unknown>)[prop];
   },
-) as unknown as Tag;
+}) as unknown as Sql;
 
 export default sql;
