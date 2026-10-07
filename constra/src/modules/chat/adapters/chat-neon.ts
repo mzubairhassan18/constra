@@ -61,8 +61,12 @@ export const neonChat: ChatPort = {
     return String(rows[0].last_read_at);
   },
   async setLastRead(conversationId, userId, at) {
+    // GREATEST with now(): messages.created_at is stamped by the DB clock, so
+    // storing the caller's app-clock value would leave last_read_at behind it
+    // whenever the app clock lags the DB — and unread would never clear.
+    // The caller's `at` still wins when it is ahead (backfills, tests).
     await sql`
-      UPDATE memberships SET last_read_at = ${at}::timestamptz
+      UPDATE memberships SET last_read_at = GREATEST(${at}::timestamptz, now())
       WHERE conversation_id = ${conversationId} AND user_id = ${userId}`;
   },
   async listMemberConversations(userId) {

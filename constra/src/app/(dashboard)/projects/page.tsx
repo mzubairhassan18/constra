@@ -4,8 +4,6 @@ import { getSessionUser } from "@/lib/session";
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
 import NewProjectForm from "./NewProjectForm";
 
-export const instant = false;
-
 export default async function ProjectsPage() {
   if (!(await getSessionUser())) redirect("/login");
   const projects = await listProjects();

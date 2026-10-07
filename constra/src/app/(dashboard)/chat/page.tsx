@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import ChatApp from "./ChatApp";
 
-export const instant = false;
-
 export default async function ChatPage() {
   if (!(await getSessionUser())) redirect("/login");
   return (

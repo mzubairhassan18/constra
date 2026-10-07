@@ -4,8 +4,6 @@ import { getSessionUser } from "@/lib/session";
 import { listNotifications } from "@/modules/notify/adapters/notify-neon";
 import { readAllAction } from "./actions";
 
-export const instant = false;
-
 export default async function NotificationsPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");

@@ -11,8 +11,6 @@ import {
 import { createPortalTokenAction } from "../portal-actions";
 import { listPortalTokens } from "@/modules/portal/adapters/portal-neon";
 
-export const instant = false;
-
 const input =
   "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 const btn =

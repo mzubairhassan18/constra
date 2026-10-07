@@ -18,8 +18,6 @@ import ManpowerForm from "./ManpowerForm";
 import RequestForm from "./RequestForm";
 import ReportForm from "./ReportForm";
 
-export const instant = false;
-
 const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";
 const input =
   "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";

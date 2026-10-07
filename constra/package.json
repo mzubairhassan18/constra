@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "cf:build": "next build --webpack && opennextjs-cloudflare build --skipNextBuild",
+    "postinstall": "node scripts/patch-opennext.mjs",
+    "cf:build": "node scripts/patch-opennext.mjs && next build --webpack && opennextjs-cloudflare build --skipNextBuild",
     "cf:preview": "opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare deploy"
   },

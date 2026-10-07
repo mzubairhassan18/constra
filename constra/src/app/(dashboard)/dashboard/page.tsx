@@ -5,8 +5,6 @@ import { logoutAction } from "@/app/(auth)/login/actions";
 import { unreadCount } from "@/modules/notify/adapters/notify-neon";
 import sql from "@/lib/db";
 
-export const instant = false;
-
 export default async function DashboardPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");

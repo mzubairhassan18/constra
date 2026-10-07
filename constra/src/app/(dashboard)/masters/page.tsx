@@ -7,8 +7,6 @@ import {
 } from "@/modules/finance/adapters/ledger-neon";
 import { addMaterialAction, addSupplierAction } from "./actions";
 
-export const instant = false;
-
 const input =
   "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";

@@ -3,8 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { getEmployee } from "@/modules/hr/adapters/employees-neon";
 
-export const instant = false;
-
 export default async function EmployeeDetailPage({
   params,
 }: {

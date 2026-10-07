@@ -7,8 +7,6 @@ import { listProjects } from "@/modules/projects/adapters/projects-neon";
 import sql from "@/lib/db";
 import BillForm from "./BillForm";
 
-export const instant = false;
-
 export default async function BillsPage() {
   if (!(await getSessionUser())) redirect("/login");
   const [bills, suppliers, projects] = await Promise.all([

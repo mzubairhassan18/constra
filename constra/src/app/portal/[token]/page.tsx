@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPortalProject } from "@/modules/portal/adapters/portal-neon";
 
-export const instant = false;
-
 export default async function PortalPage({
   params,
 }: {

@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import AskBox from "./AskBox";
 
-export const instant = false;
-
 export default async function AskPage() {
   if (!(await getSessionUser())) redirect("/login");
   return (
