@@ -68,3 +68,32 @@ export async function openAssignments(): Promise<
     fromDate: fmtDate(r.from_date),
   }));
 }
+
+export async function myAssignments(userId: string): Promise<
+  {
+    id: string;
+    employeeName: string;
+    projectName: string;
+    stageName: string | null;
+    fromDate: string;
+    allocationPct: number;
+  }[]
+> {
+  const rows = await sql`
+    SELECT asg.id, e.name AS employee_name, p.name AS project_name,
+      s.name AS stage_name, asg.from_date, asg.allocation_pct
+    FROM assignments asg
+    JOIN employees e ON e.id = asg.employee_id
+    JOIN projects p ON p.id = asg.project_id
+    LEFT JOIN stages s ON s.id = asg.stage_id
+    WHERE asg.to_date IS NULL AND e.user_id = ${userId}
+    ORDER BY asg.from_date DESC`;
+  return rows.map((r) => ({
+    id: r.id as string,
+    employeeName: r.employee_name as string,
+    projectName: r.project_name as string,
+    stageName: (r.stage_name as string | null) ?? null,
+    fromDate: fmtDate(r.from_date),
+    allocationPct: Number(r.allocation_pct),
+  }));
+}

@@ -5,10 +5,12 @@ import { openAssignments } from "@/modules/hr/adapters/assignments-neon";
 import { listProjects } from "@/modules/projects/adapters/projects-neon";
 import { assignAction, attendanceAction } from "./actions";
 import NewEmployeeForm from "./NewEmployeeForm";
+import { Card, KpiCard, StatusChip } from "@/ui/cards";
+import { DataTable } from "@/ui/data-table";
+import { Modal } from "@/ui/modal";
 
-const input =
-  "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";
-const btn = "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700";
+const input = "constra-input";
+const today = () => new Date().toISOString().slice(0, 10);
 
 export default async function HrPage() {
   await requireAccess("hr.read");
@@ -17,28 +19,64 @@ export default async function HrPage() {
     openAssignments(),
     listProjects(),
   ]);
+  const perm = employees.filter((e) => e.kind === "permanent").length;
+  const wager = employees.length - perm;
+
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">HR</h1>
-        <Link href="/dashboard" className="text-sm underline">Dashboard</Link>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 md:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <Link href="/dashboard" className="hover:underline">Dashboard</Link> / HR
+          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight">People & attendance</h1>
+        </div>
+        <Modal
+          title="Add employee"
+          trigger={<button type="button" className="constra-btn-primary">+ Add employee</button>}
+        >
+          <NewEmployeeForm />
+        </Modal>
       </header>
-      <NewEmployeeForm />
-      <section>
-        <h2 className="font-semibold">Employees</h2>
-        <ul className="mt-2 flex flex-col gap-2">
-          {employees.map((e) => (
-            <li key={e.id} className="rounded border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <Link href={`/hr/${e.id}`} className="font-semibold underline">{e.name}</Link>
-              <span className="text-zinc-500"> · {e.kind.replace("_", " ")}{e.designation ? ` · ${e.designation}` : ""}</span>
-            </li>
-          ))}
-          {employees.length === 0 && <p className="text-sm text-zinc-500">No employees yet.</p>}
-        </ul>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="HR metrics">
+        <KpiCard label="Employees" value={String(employees.length)} hint={`${perm} permanent · ${wager} daily wage`} />
+        <KpiCard label="On assignment" value={String(open.length)} hint="open postings" />
+        <KpiCard label="Projects staffed" value={String(new Set(open.map((o) => o.projectName)).size)} hint="with labour aboard" />
+        <KpiCard label="Attendance" value="Today" hint="log hours per row below" />
       </section>
-      <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
-        <h2 className="font-semibold">Assign to project</h2>
-        <form action={assignAction} className="mt-2 flex flex-wrap gap-2">
+
+      <Card title="Employees" subtitle="Open a profile for visas, salary, documents">
+        <DataTable
+          columns={[
+            {
+              key: "name",
+              header: "Name",
+              render: (e: (typeof employees)[number]) => (
+                <Link href={`/hr/${e.id}`} className="font-semibold hover:underline">{e.name}</Link>
+              ),
+            },
+            {
+              key: "kind",
+              header: "Type",
+              render: (e) => <StatusChip status={e.kind.replace("_", " ")} />,
+            },
+            { key: "role", header: "Designation", render: (e) => e.designation ?? "—" },
+            {
+              key: "open",
+              header: "",
+              render: (e) => (
+                <Link href={`/hr/${e.id}`} className="constra-btn-ghost inline-block">Open →</Link>
+              ),
+            },
+          ]}
+          rows={employees}
+          empty="No employees yet — add your first hire above."
+        />
+      </Card>
+
+      <Card title="Assign to project" subtitle="Assigning closes any open posting on the start date — history is kept">
+        <form action={assignAction} className="flex flex-wrap gap-2">
           <select name="employeeId" required className={input} defaultValue="">
             <option value="" disabled>Employee…</option>
             {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -47,28 +85,38 @@ export default async function HrPage() {
             <option value="" disabled>Project…</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <input name="fromDate" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} className={input} />
-          <button className={btn}>Assign</button>
+          <input name="fromDate" type="date" required defaultValue={today()} className={input} aria-label="Start date" />
+          <button className="constra-btn-primary">Assign</button>
         </form>
-        <p className="mt-1 text-xs text-zinc-500">Assigning closes any open assignment on the start date — history is kept.</p>
-      </section>
-      <section>
-        <h2 className="font-semibold">Open assignments — log attendance</h2>
-        <ul className="mt-2 flex flex-col gap-2">
-          {open.map((o) => (
-            <li key={o.id} className="flex flex-wrap items-center gap-2 rounded border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <span><b>{o.employeeName}</b> → {o.projectName} (since {o.fromDate})</span>
-              <form action={attendanceAction} className="flex items-center gap-1">
-                <input type="hidden" name="assignmentId" value={o.id} />
-                <input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} className={input} />
-                <input name="hours" inputMode="decimal" required placeholder="Hours" className={`${input} w-20`} />
-                <button className={btn}>Log</button>
-              </form>
-            </li>
-          ))}
-          {open.length === 0 && <p className="text-sm text-zinc-500">No open assignments.</p>}
-        </ul>
-      </section>
+      </Card>
+
+      <Card title="Open assignments — log attendance" subtitle="Hours feed stage labour cost automatically">
+        <DataTable
+          columns={[
+            {
+              key: "who",
+              header: "Employee → site",
+              render: (o: (typeof open)[number]) => (
+                <span><b>{o.employeeName}</b> <span className="text-slate-500">→ {o.projectName} · since {o.fromDate}</span></span>
+              ),
+            },
+            {
+              key: "log",
+              header: "Log hours",
+              render: (o) => (
+                <form action={attendanceAction} className="flex items-center gap-1">
+                  <input type="hidden" name="assignmentId" value={o.id} />
+                  <input name="date" type="date" required defaultValue={today()} className={`${input} w-32`} aria-label="Date" />
+                  <input name="hours" inputMode="decimal" required placeholder="Hrs" className={`${input} w-20`} aria-label="Hours" />
+                  <button className="constra-btn-ghost whitespace-nowrap">Log</button>
+                </form>
+              ),
+            },
+          ]}
+          rows={open}
+          empty="No open assignments."
+        />
+      </Card>
     </main>
   );
 }

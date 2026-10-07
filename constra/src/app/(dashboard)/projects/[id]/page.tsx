@@ -8,8 +8,9 @@ import {
   addTaskAction,
   setTaskAction,
 } from "../actions";
-import { createPortalTokenAction } from "../portal-actions";
+import { createPortalTokenAction, setProjectClientAction } from "../portal-actions";
 import { listPortalTokens } from "@/modules/portal/adapters/portal-neon";
+import { listClientUsers, projectClientUser } from "@/modules/client/adapters/client-neon";
 
 const input =
   "rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900";
@@ -27,6 +28,10 @@ export default async function ProjectDetailPage({
   if (!detail) notFound();
   const { project } = detail;
   const tokens = await listPortalTokens(project.id);
+  const [clientUsers, linkedClient] = await Promise.all([
+    listClientUsers(),
+    projectClientUser(project.id),
+  ]);
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
@@ -93,6 +98,22 @@ export default async function ProjectDetailPage({
         <input name="name" required maxLength={200} placeholder="New stage name" className={input} />
         <button className={btn}>Add stage</button>
       </form>
+
+      <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <h2 className="font-semibold">Client workspace login</h2>
+        <p className="text-sm text-zinc-500">Link a client login — they see progress, dues, updates and messaging at /client.</p>
+        <form action={setProjectClientAction} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <input type="hidden" name="projectId" value={project.id} />
+          <select name="clientUserId" defaultValue={linkedClient ?? ""} className={input}>
+            <option value="">No client login…</option>
+            {clientUsers.map((u) => (
+              <option key={u.id} value={u.id}>{u.displayName} ({u.username})</option>
+            ))}
+          </select>
+          <button className={btn}>Link</button>
+          {linkedClient && <a href="/client" className="underline">Preview workspace →</a>}
+        </form>
+      </section>
 
       <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
         <h2 className="font-semibold">Client portal links</h2>

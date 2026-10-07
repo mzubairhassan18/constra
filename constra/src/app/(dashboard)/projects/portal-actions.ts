@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/session";
 import { can } from "@/modules/auth/domain/types";
 import { createPortalToken } from "@/modules/portal/adapters/portal-neon";
+import { setProjectClient } from "@/modules/client/adapters/client-neon";
 
 export async function createPortalTokenAction(formData: FormData) {
   const user = await getSessionUser();
@@ -15,5 +16,15 @@ export async function createPortalTokenAction(formData: FormData) {
     showPhotos: formData.get("showPhotos") !== "off",
     showDelays: formData.get("showDelays") !== "off",
   });
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function setProjectClientAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user || !can(user.permissions, "projects.write")) return;
+  const projectId = String(formData.get("projectId") ?? "");
+  const userId = String(formData.get("clientUserId") ?? "");
+  if (!projectId) return;
+  await setProjectClient(projectId, userId === "" ? null : userId);
   revalidatePath(`/projects/${projectId}`);
 }

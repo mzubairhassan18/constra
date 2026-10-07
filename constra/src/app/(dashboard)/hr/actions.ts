@@ -23,11 +23,16 @@ async function requireHr(): Promise<boolean> {
   return !!user && (can(user.permissions, "hr.write") || can(user.permissions, "hr.attendance"));
 }
 
+async function requireHrWrite(): Promise<boolean> {
+  const user = await getSessionUser();
+  return !!user && can(user.permissions, "hr.write");
+}
+
 export async function createEmployeeAction(
   _prev: { error?: string },
   formData: FormData,
 ): Promise<{ error?: string }> {
-  if (!(await requireHr())) return { error: "Not allowed." };
+  if (!(await requireHrWrite())) return { error: "Not allowed." };
   const parsed = createEmployeeSchema.safeParse({
     kind: formData.get("kind"),
     name: formData.get("name"),
@@ -57,7 +62,7 @@ export async function createEmployeeAction(
 }
 
 export async function assignAction(formData: FormData) {
-  if (!(await requireHr())) return;
+  if (!(await requireHrWrite())) return;
   const parsed = assignSchema.safeParse({
     employeeId: formData.get("employeeId"),
     projectId: formData.get("projectId"),
