@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 import type {
   AccountsPort,
   BillsPort,
@@ -88,7 +89,7 @@ export async function listBills(): Promise<
   return rows.map((r) => ({
     id: r.id as string,
     invoiceNo: r.invoice_no as string | null,
-    date: String(r.date).slice(0, 10),
+    date: fmtDate(r.date),
     net: Number(r.net),
     vatIn: Number(r.vat_in),
     gross: Number(r.gross),
@@ -153,7 +154,7 @@ export async function getBillDetail(billId: string): Promise<{
   return {
     id: b.id as string,
     invoiceNo: (b.invoice_no as string | null) ?? null,
-    date: String(b.date).slice(0, 10),
+    date: fmtDate(b.date),
     net: Number(b.net),
     vatIn: Number(b.vat_in),
     gross: Number(b.gross),

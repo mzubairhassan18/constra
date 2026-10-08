@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 import type { ManpowerInput, OpsAccounts, OpsStore } from "../use-cases/operations";
 
 export const neonOpsStore: OpsStore = {
@@ -89,7 +90,7 @@ export async function listManpower(limit = 50): Promise<
     FROM manpower_entries ORDER BY date DESC, created_at DESC LIMIT ${limit}`;
   return rows.map((r) => ({
     id: r.id as string,
-    date: String(r.date).slice(0, 10),
+    date: fmtDate(r.date),
     name: r.name as string,
     skill: r.skill as string | null,
     rate: Number(r.rate),
@@ -114,7 +115,7 @@ export async function listMaterialRequests(): Promise<
     if (!map.has(id)) {
       map.set(id, {
         id,
-        date: String(r.date).slice(0, 10),
+        date: fmtDate(r.date),
         projectName: r.project_name as string | null,
         status: r.status as string,
         lines: [],
@@ -136,7 +137,7 @@ export async function listDailyReports(limit = 30): Promise<
     ORDER BY d.date DESC LIMIT ${limit}`;
   return rows.map((r) => ({
     id: r.id as string,
-    date: String(r.date).slice(0, 10),
+    date: fmtDate(r.date),
     projectName: r.project_name as string,
     workDone: r.work_done as string,
     delays: r.delays as string | null,

@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 import type {
   Project,
   Stage,
@@ -69,7 +70,7 @@ export async function getProjectDetail(projectId: string): Promise<{
       title: t.title as string,
       status: t.status as Task["status"],
       priority: t.priority as string,
-      dueDate: t.due_date as string | null,
+      dueDate: t.due_date ? fmtDate(t.due_date) : null,
       delayReason: t.delay_reason as string | null,
     });
   }

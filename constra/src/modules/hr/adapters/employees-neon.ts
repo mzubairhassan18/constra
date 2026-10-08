@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 import type { Employee } from "../domain/types";
 
 export interface EmployeeRow extends Employee {
@@ -8,15 +9,7 @@ export interface EmployeeRow extends Employee {
 }
 
 /** Neon may return DATE as Date or string — normalize to YYYY-MM-DD (calendar day, TZ-safe). */
-export function fmtDate(v: unknown): string {
-  if (v instanceof Date) {
-    const y = v.getFullYear();
-    const m = String(v.getMonth() + 1).padStart(2, "0");
-    const d = String(v.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
-  return String(v).slice(0, 10);
-}
+export { fmtDate } from "@/lib/format";
 
 export async function listEmployees(): Promise<EmployeeRow[]> {
   const rows = await sql`

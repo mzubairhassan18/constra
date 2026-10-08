@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 
 export async function listSuppliers(): Promise<
   { id: string; name: string; trnNo: string | null }[]
@@ -50,7 +51,7 @@ export async function recentEntries(limit = 50): Promise<LedgerEntry[]> {
     if (!map.has(id)) {
       map.set(id, {
         id,
-        date: String(r.date).slice(0, 10),
+        date: fmtDate(r.date),
         ref: r.ref as string | null,
         memo: r.memo as string | null,
         lines: [],

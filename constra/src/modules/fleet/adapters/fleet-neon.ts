@@ -1,4 +1,5 @@
 import sql from "@/lib/db";
+import { fmtDate } from "@/lib/format";
 
 export interface VehicleRow {
   id: string;
@@ -25,8 +26,8 @@ export async function listVehicles(): Promise<VehicleRow[]> {
     id: r.id as string,
     plateNo: r.plate_no as string,
     type: r.type as string,
-    mulkiaExpiry: r.mulkia_expiry ? String(r.mulkia_expiry).slice(0, 10) : null,
-    insuranceExpiry: r.insurance_expiry ? String(r.insurance_expiry).slice(0, 10) : null,
+    mulkiaExpiry: r.mulkia_expiry ? fmtDate(r.mulkia_expiry) : null,
+    insuranceExpiry: r.insurance_expiry ? fmtDate(r.insurance_expiry) : null,
     maintenanceTotal: Number(r.maintenance_total),
     fineTotal: Number(r.fine_total),
   }));
@@ -108,7 +109,7 @@ export async function listQuotations(): Promise<QuotationRow[]> {
     id: r.id as string,
     clientName: r.client_name as string,
     projectName: (r.project_name as string | null) ?? null,
-    date: String(r.date).slice(0, 10),
+    date: fmtDate(r.date),
     amount: Number(r.amount),
     status: r.status as QuotationStatus,
     notes: (r.notes as string | null) ?? null,
